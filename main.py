@@ -21,9 +21,20 @@ async def main():
     url = input("Enter a searched business category url: ")
     print("Scraping Business URLs. Please wait...")
     bizz_urls = await all_business_urls(url)
+    print(f"Collected {len(bizz_urls)} business URLs.")
+
+    if not bizz_urls:
+        print("No business URLs found. Please check the input URL or scraper logic.")
+        return []
     
     print("Scraping data for businesses. This may take some time...")
     scrape_datas = await scrapeMe_with_progress(bizz_urls)
+    print(f"Scraped data for {len(scrape_datas)} businesses.")
+
+    if not scrape_datas:
+        print("No data was scraped. Please check the scraper logic or website structure.")
+    
+    return scrape_datas
     
     # Export to CSV
     with open("scraped_data.csv", "w", newline="", encoding="utf-8") as csvfile:
