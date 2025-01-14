@@ -1,50 +1,33 @@
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 
-# Configure Chrome options
+# Set up headless Chrome options
 chrome_options = Options()
+chrome_options.add_argument("--headless")
 chrome_options.add_argument('--headless')  # Run in headless mode
 chrome_options.add_argument('--no-sandbox')  # Required in some restricted environments
 chrome_options.add_argument('--disable-dev-shm-usage')  # Overcome limited resource problems
 chrome_options.add_argument('--remote-debugging-port=9222')  # Avoid DevToolsActivePort issue
 
-# Specify ChromeDriver path if necessary (e.g., Service for explicit path)
-service = Service('/path/to/chromedriver')  # Update the path if needed
+# Initialize the WebDriver
+driver = webdriver.Chrome(options=chrome_options)
+driver.get('https://www.paginebianche.it/aziende?qs=Abbigliamento')
 
-# Initialize the driver
-driver = webdriver.Chrome(service=service, options=chrome_options)
+# Wait for content to load (if necessary)
+driver.implicitly_wait(5)  # Adjust this as needed
 
-try:
-    # Load the target URL
-    url = input("Enter a business category URL (e.g., https://www.example.com): ").strip()
-    driver.get(url)
+# Get the page source after JavaScript has loaded
+html = driver.page_source
+soup = BeautifulSoup(html, 'html.parser')
 
-    # Wait for elements to load (adjust timeout and locator as needed)
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_all_elements_located((By.CLASS_NAME, 'link-class'))  # Update 'link-class' to the actual class name
-    )
+# Find and print business URLs
+business_urls = []
+for item in soup.find_all('a', class_='link-class'):  # Update 'link-class' with the actual class
+    business_urls.append(item.get('href'))
 
-    # Get the page source after JavaScript has loaded
-    html = driver.page_source
-    soup = BeautifulSoup(html, 'html.parser')
+print(f"Collected {len(business_urls)} business URLs.")
+print(business_urls)
 
-    # Find and collect business URLs
-    business_urls = []
-    for item in soup.find_all('a', class_='link-class'):  # Update 'link-class' to the actual class
-        business_urls.append(item.get('href'))
-
-    print(f"Collected {len(business_urls)} business URLs:")
-    for link in business_urls:
-        print(link)
-
-except Exception as e:
-    print(f"An error occurred: {e}")
-
-finally:
-    # Close the driver
-    driver.quit()
+# Close the driver
+driver.quit()
