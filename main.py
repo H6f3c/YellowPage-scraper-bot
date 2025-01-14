@@ -1,55 +1,63 @@
-import asyncio
+import requests
+from bs4 import BeautifulSoup
 import time
-import csv
-from scrapers.yp_scraper import all_business_urls, scrapeBusiness
 
-async def scrapeMe_with_progress(bizz_urls):
-    total = len(bizz_urls)
-    results = []
+# Step 1: Scrape search results to get links to business details
+def get_business_links(search_url):
+    print("Fetching business links...")
+    response = requests.get(search_url)
+    soup = BeautifulSoup(response.text, 'html.parser')
     
-    for idx, url in enumerate(bizz_urls, 1):
-        print(f"Scraping {idx}/{total}: {url}")
-        try:
-            data = await scrapeBusiness(url)  # Assuming scrapeBusiness scrapes one business
-            results.append(data)
-        except Exception as e:
-            print(f"Error scraping {url}: {e}")
+    # Adjust the selector to match Yellow Pages' structure
+    business_links = soup.find_all('a', class_='business-name')  # Adjust the class name
+    links = [link['href'] for link in business_links if link.get('href')]
     
-    return results
+    print(f"Found {len(links)} business links.")
+    return links
 
-async def main():
-    url = input("Enter a searched business category url: ")
-    print("Scraping Business URLs. Please wait...")
-    bizz_urls = await all_business_urls(url)
-    print(f"Collected {len(bizz_urls)} business URLs.")
+# Step 2: Scrape each business's detail page for data
+def scrape_business_details(base_url, business_link):
+    full_url = f"{base_url}{business_link}"  # Construct the full URL
+    print(f"Scraping business details from: {full_url}")
+    response = requests.get(full_url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    
+    try:
+        # Extract business details (adjust selectors as needed)
+        business_name = soup.find('h1', class_='business-title').text.strip()  # Adjust the class name
+        business_phone = soup.find('a', class_='phone').text.strip()  # Adjust the class name
+        business_website = soup.find('a', class_='website')['href'].strip()  # Adjust the class name
+    except AttributeError:
+        print("Some details are missing. Skipping...")
+        return None
+    
+    return {
+        'name': business_name,
+        'phone': business_phone,
+        'website': business_website
+    }
 
-    if not bizz_urls:
-        print("No business URLs found. Please check the input URL or scraper logic.")
-        return []
+# Main script
+def main():
+    base_url = "https://www.yellowpages.com"  # Base URL of the Yellow Pages site
+    search_url = f"{base_url}/search?search_terms=clothing&geo_location_terms=Los+Angeles%2C+CA"  # Update for your query
     
-    print("Scraping data for businesses. This may take some time...")
-    scrape_datas = await scrapeMe_with_progress(bizz_urls)
-    print(f"Scraped data for {len(scrape_datas)} businesses.")
-
-    if not scrape_datas:
-        print("No data was scraped. Please check the scraper logic or website structure.")
+    business_links = get_business_links(search_url)
+    if not business_links:
+        print("No business links found. Exiting.")
+        return
     
-    return scrape_datas
+    # Scrape details for each business
+    all_data = []
+    for link in business_links:
+        data = scrape_business_details(base_url, link)
+        if data:
+            all_data.append(data)
+        time.sleep(1)  # Be polite and avoid overloading the server
     
-    # Export to CSV
-    with open("scraped_data.csv", "w", newline="", encoding="utf-8") as csvfile:
-        fieldnames = scrape_datas[0].keys()  # Assuming each entry is a dictionary
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(scrape_datas)
-    
-    print("Data exported to 'scraped_data.csv'")
-    return scrape_datas
+    print(f"Scraped {len(all_data)} businesses:")
+    for business in all_data:
+        print(business)
 
 if __name__ == "__main__":
-    start_time = time.time()
-    print(asyncio.run(main()))
-    total_time = round(time.time() - start_time, 2)
-    time_in_secs = round(total_time)
-    time_in_mins = round(total_time / 60)
-    print(f"Took {time_in_secs} seconds | {time_in_mins} minutes.")
+    main()
