@@ -2,7 +2,7 @@ import asyncio
 import time
 import os
 import csv
-from scrapers.yp_scraper import all_business_urls, scrapeBusinessDetails
+from scrapers.yp_scraper import all_business_urls, scrapeBusiness
 
 if __name__ == "__main__":
     start_time = time.time()
