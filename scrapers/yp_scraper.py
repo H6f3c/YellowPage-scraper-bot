@@ -2,6 +2,10 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 
+service = Service("/usr/bin/chromedriver", log_path="chromedriver.log")
+service.start()
+
+
 # Configure Chrome options
 chrome_options = Options()
 chrome_options.add_argument('--headless')  # Run without GUI
