@@ -2,13 +2,18 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 
+# Configure Chrome options
 chrome_options = Options()
-chrome_options.add_argument('--headless')  # Run in headless mode
-chrome_options.add_argument('--no-sandbox')  # Avoid sandboxing issues
-chrome_options.add_argument('--disable-dev-shm-usage')  # Handle limited resources
+chrome_options.add_argument('--headless')  # Run without GUI
+chrome_options.add_argument('--no-sandbox')  # Disable sandboxing (required in Colab)
+chrome_options.add_argument('--disable-dev-shm-usage')  # Avoid shared memory issues
+chrome_options.add_argument('--disable-gpu')  # Disable GPU usage
 chrome_options.binary_location = '/usr/bin/chromium-browser'
 
-driver = webdriver.Chrome(service=Service('/usr/bin/chromedriver'), options=chrome_options)
+# Initialize the driver
+service = Service('/usr/bin/chromedriver')
+driver = webdriver.Chrome(service=service, options=chrome_options)
+
 
 # Automatically download and set up ChromeDriver
 service = Service(ChromeDriverManager().install())
