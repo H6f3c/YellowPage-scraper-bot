@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 
 from tools.functionalities import userAgents, randomTime, verify_yellow, yaml_by_select, yp_lists, create_path
 
+print(f"Scraping page: {url}")
 
 # Extract business URLs from the Yellow Pages search results
 async def yellowPages(yp_url):
@@ -25,7 +26,8 @@ async def yellowPages(yp_url):
                     global categories
                     categories = f"""{''.join(soup.xpath(scrape['categories']))}"""
                     page_content = ''.join(soup.xpath(scrape['page_content']))
-
+                    print(f"Found business URLs: {business_links}")
+                    
                     # Exit if no results found
                     if re.search("^No results found for.*", page_content):
                         print("No content. Please try again with a different keyword.")
